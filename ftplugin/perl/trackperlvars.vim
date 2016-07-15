@@ -5,10 +5,8 @@
 " License:  This file is placed in the public domain.
 
 " If already loaded, we're done...
-if exists("loaded_trackperlvars")
-    finish
-endif
-let loaded_trackperlvars = 1
+if exists("b:did_ftplugin") | finish | endif
+let b:did_ftplugin = 1
 
 " Preserve external compatibility options, then enable full vim compatibility...
 let s:save_cpo = &cpo
@@ -25,50 +23,47 @@ augroup TrackVarGlobal
 augroup END
 
 function! TPV__setup ()
-    " Only in small Perl files...
-    if &filetype == 'perl' || expand("%:e") =~ '^\%(\.p[lm]\|\.t\)$'
 
-        " Tracking can be locked by setting this variable
-        if !exists('b:track_perl_var_locked')
-            let b:track_perl_var_locked = 0
-        endif
+    " Tracking can be locked by setting this variable
+    if !exists('b:track_perl_var_locked')
+        let b:track_perl_var_locked = 0
+    endif
 
-        " Set up autocommands...
-        augroup TrackVarBuffer
-            autocmd!
-            autocmd CursorMoved  <buffer>  call TPV_track_perl_var()
-            autocmd CursorMovedI <buffer>  call TPV_track_perl_var()
-        augroup END
+    " Set up autocommands...
+    augroup TrackVarBuffer
+        autocmd!
+        autocmd CursorMoved  <buffer>  call TPV_track_perl_var()
+        autocmd CursorMovedI <buffer>  call TPV_track_perl_var()
+    augroup END
 
-        " Remember how * was set up (if it was) and change it...
-        let b:old_star_map = maparg('*')
-        nmap <special> <buffer><silent> *   :let @/ = TPV_locate_perl_var()<CR>
+    " Remember how * was set up (if it was) and change it...
+    let b:old_star_map = maparg('*')
+    nmap <special> <buffer><silent> *   :let @/ = TPV_locate_perl_var()<CR>
 
-        " cv --> change variable...
-        nmap <special> <buffer>         cv  :call TPV_rename_perl_var('normal')<CR>
-        vmap <special> <buffer>         cv  :call TPV_rename_perl_var('visual')<CR>gv
+    " cv --> change variable...
+    nmap <special> <buffer>         cv  :call TPV_rename_perl_var('normal')<CR>
+    vmap <special> <buffer>         cv  :call TPV_rename_perl_var('visual')<CR>gv
 
-        " gd --> goto definition...
-        nmap <special> <buffer><silent> gd  :let @/ = TPV_locate_perl_var_decl()<CR>
+    " gd --> goto definition...
+    nmap <special> <buffer><silent> gd  :let @/ = TPV_locate_perl_var_decl()<CR>
 
-        " tt --> toggle tracking...
-        nmap <special> <buffer><silent> tt  :let b:track_perl_var_locked = ! b:track_perl_var_locked<CR>:call TPV_track_perl_var()<CR>
+    " tt --> toggle tracking...
+    nmap <special> <buffer><silent> tt  :let b:track_perl_var_locked = ! b:track_perl_var_locked<CR>:call TPV_track_perl_var()<CR>
 
-        " Adjust keywords to cover sigils and qualifiers...
-        setlocal iskeyword+=$
-        setlocal iskeyword+=%
-        setlocal iskeyword+=@-@
-        setlocal iskeyword+=:
-        setlocal iskeyword-=,
+    " Adjust keywords to cover sigils and qualifiers...
+    setlocal iskeyword+=$
+    setlocal iskeyword+=%
+    setlocal iskeyword+=@-@
+    setlocal iskeyword+=:
+    setlocal iskeyword-=,
 
-        " Restore any frozen tracking...
-        if b:track_perl_var_locked
-            highlight! link TRACK_PERL_VAR_ACTIVE  TRACK_PERL_VAR_LOCKED
-            try
-                call matchadd('TRACK_PERL_VAR_ACTIVE', b:track_perl_var_locked_pat, 1000, s:match_id)
-            catch /./
-            endtry
-        endif
+    " Restore any frozen tracking...
+    if b:track_perl_var_locked
+        highlight! link TRACK_PERL_VAR_ACTIVE  TRACK_PERL_VAR_LOCKED
+        try
+            call matchadd('TRACK_PERL_VAR_ACTIVE', b:track_perl_var_locked_pat, 1000, s:match_id)
+        catch /./
+        endtry
     endif
 
 endfunction
